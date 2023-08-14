@@ -1,22 +1,32 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   'main.c'                                           :+:      :+:    :+:   */
+/*   philos.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lbaron    <lbaron@student.42berlin.de>     :+:  +:+       +#+        */
+/*   By: kmooney <kmooney@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023-08-14 13:13:03 by lbaron            :+:    #+#             */
-/*   Updated: 2023-08-14 13:13:03 by lbaron           ###   ########.fr       */
+/*   Created: 2023/08/14 13:13:03 by lbaron            #+#    #+#             */
+/*   Updated: 2023/08/14 21:20:14 by kmooney          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philos.h"
+#include <pthread.h>
+#include <stdio.h>
+#include <limits.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/time.h>
 
 int j = 0;
+pthread_mutex_t mutex;
 
 typedef struct s_philo
 {
 	int		id;
+	int		out;
+	pthread_mutex_t fork_left;
+	pthread_mutex_t fork_right;
 	pthread_t phi;
 }t_philo;
 
@@ -39,46 +49,19 @@ typedef struct s_data
 
 int mails = 0;
 
-
-u_int64_t get_time(void)
+void *routine(void *philo)
 {
-	struct timeval time;
-	if (gettimeofday(&time, NULL))
-		return (0);
-
-	return ((time.tv_usec * (u_int64_t)1000) + (time.tv_usec / 1000));
-}
-
-void *routine(void *data)
-{
-	//j = 0;
-	t_data *v;
-	u_int64_t time_begin;
-	u_int64_t time_end;
-	u_int64_t total_time;
-	v = (t_data *)data;
-
-	time_begin = get_time();
-	for (int i = 0; i < 3 ;i++)
+	t_philo *v;
+	v = (t_philo *)philo;
+ 	printf("First mail is %d and philo is %d\n", mails, v->id);
+	for (int i = 0; i < 10000; i++)
 	{
-//		pthread_mutex_lock(&v->forks[j]->mutex);
+		pthread_mutex_lock(&mutex);
 		mails++;
-		printf("Mails is %d \n", mails);
-//		pthread_mutex_unlock(&v->forks[j]->mutex);
+		v->out++;
+		printf("Mail is %d and %d/10000 from philo %d\n", mails, v->out, v->id);
+		pthread_mutex_unlock(&mutex);
 	}
-
-	if (v->philo[j]->id == 0)
-	{
-		printf("Thread %d is super special!\n", v->philo[j]->id);
-		//usleep(100000);
-
-	}
-	time_end = get_time();
-	total_time = time_end - time_begin;
-	total_time = total_time / 1000;
-	printf("Thread %d says total time elapsed: %lu\n", v->philo[j]->id, total_time);
-
-	j++;
 	return NULL;
 }
 
@@ -92,7 +75,9 @@ void create_philos(t_data *v)
 	{
 		v->philo[i] = malloc(sizeof(t_philo));
 		v->philo[i]->id = i;
-		if (pthread_create(&v->philo[i]->phi, NULL, &routine, v) != 0)
+		v->philo[i]->out = 0;
+		v->philo[i]->fork_left = v->forks[i]->mutex;
+		if (pthread_create(&v->philo[i]->phi, NULL, &routine, v->philo[i]) != 0)
 		{
 			write(2, "Thread creation fail", 20);
 		}
@@ -139,7 +124,7 @@ void destroy_forks(t_data *v)
 
 	for (i = 0; i < v->num_philosophers; i++)
 	{
-		if (pthread_mutex_destroy(&v->forks[j]->mutex) != 0)
+		if (pthread_mutex_destroy(&v->forks[i]->mutex) != 0)
 		{
 			write(2, "Mutex Destroy fail", 18);
 		}
@@ -149,7 +134,9 @@ void destroy_forks(t_data *v)
 int	main(int argc, char *argv[])
 {
 	t_data	v;
+	int i = 0;
 
+	pthread_mutex_init(&mutex, NULL);
 	if (argc != 5 && argc != 6)
 	{
 		print_message();
@@ -170,8 +157,7 @@ int	main(int argc, char *argv[])
 	create_forks(v.num_philosophers, &v.forks);
 	create_philos(&v);
 	join_philos(v.num_philosophers, v.philo);
-
-//	destroy_forks(&v);
+	destroy_forks(&v);
 	printf("Number of mails: %d\n", mails);
 	return (0);
 }
