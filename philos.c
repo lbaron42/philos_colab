@@ -12,6 +12,8 @@
 
 #include "philos.h"
 
+int j = 0;
+
 typedef struct s_philo
 {
 	int		id;
@@ -49,22 +51,34 @@ u_int64_t get_time(void)
 
 void *routine(void *data)
 {
+	//j = 0;
 	t_data *v;
-	u_int64_t time;
+	u_int64_t time_begin;
+	u_int64_t time_end;
+	u_int64_t total_time;
 	v = (t_data *)data;
 
-	time = get_time();
-	printf("Time %lu\n", time);
-	printf("This is Time to sleep in the routine function %d\n", v->time_to_sleep);
-
-	get_time();
-
-	for (int i = 0; i < 5 ;i++)
+	time_begin = get_time();
+	for (int i = 0; i < 3 ;i++)
 	{
-		//pthread_mutex_lock(&mutex);
+//		pthread_mutex_lock(&v->forks[j]->mutex);
 		mails++;
-		//pthread_mutex_unlock(&mutex);
+		printf("Mails is %d \n", mails);
+//		pthread_mutex_unlock(&v->forks[j]->mutex);
 	}
+
+	if (v->philo[j]->id == 0)
+	{
+		printf("Thread %d is super special!\n", v->philo[j]->id);
+		//usleep(100000);
+
+	}
+	time_end = get_time();
+	total_time = time_end - time_begin;
+	total_time = total_time / 1000;
+	printf("Thread %d says total time elapsed: %lu\n", v->philo[j]->id, total_time);
+
+	j++;
 	return NULL;
 }
 
@@ -74,7 +88,6 @@ void create_philos(t_data *v)
 
 	i = 0;
 	v->philo = malloc((v->num_philosophers + 1) * sizeof(v->philo));
-	printf("v adress: %p\n", &v);
 	while(i < v->num_philosophers)
 	{
 		v->philo[i] = malloc(sizeof(t_philo));
@@ -120,6 +133,19 @@ void create_forks(int num_phi, t_forks ***forks)
 	(*forks)[i] = NULL;
 }
 
+void destroy_forks(t_data *v)
+{
+	int i;
+
+	for (i = 0; i < v->num_philosophers; i++)
+	{
+		if (pthread_mutex_destroy(&v->forks[j]->mutex) != 0)
+		{
+			write(2, "Mutex Destroy fail", 18);
+		}
+	}
+}
+
 int	main(int argc, char *argv[])
 {
 	t_data	v;
@@ -145,7 +171,7 @@ int	main(int argc, char *argv[])
 	create_philos(&v);
 	join_philos(v.num_philosophers, v.philo);
 
-	//pthread_mutex_destroy(&mutex);
+//	destroy_forks(&v);
 	printf("Number of mails: %d\n", mails);
 	return (0);
 }
