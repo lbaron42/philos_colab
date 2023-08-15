@@ -6,7 +6,7 @@
 /*   By: kmooney <kmooney@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/15 12:31:42 by kmooney           #+#    #+#             */
-/*   Updated: 2023/08/15 15:02:22 by kmooney          ###   ########.fr       */
+/*   Updated: 2023/08/15 18:30:45 by kmooney          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,7 @@ void	ft_join_philos(t_data *data)
 			i++;
 		}
 	}
+	ft_free_all(data);
 	return ;
 }
 

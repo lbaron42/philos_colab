@@ -6,7 +6,7 @@
 /*   By: kmooney <kmooney@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/07/29 23:37:56 by lbaron            #+#    #+#             */
-/*   Updated: 2023/08/15 12:51:20 by kmooney          ###   ########.fr       */
+/*   Updated: 2023/08/15 19:25:16 by kmooney          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,9 +41,9 @@ static void	error_no_digit(const char *str)
 
 int	ft_atoi(char *str)
 {
-	int	i;
-	int	sig;
-	int	res;
+	int		i;
+	int		sig;
+	int		res;
 
 	i = 0;
 	sig = 1;
@@ -62,4 +62,29 @@ int	ft_atoi(char *str)
 		i++;
 	}
 	return (res * sig);
+}
+
+uint64_t	ft_atoi_uint64t(char *str)
+{
+	int			i;
+	uint64_t	sig;
+	uint64_t	res;
+
+	i = 0;
+	sig = 1;
+	res = 0;
+	error_no_digit(str);
+	if (str[0] == '-')
+	{
+		sig = -1;
+		str++;
+	}
+	while (str[i])
+	{
+		res = res + (str[i] - '0');
+		if (str[i + 1] != '\0')
+			res = res * 10;
+		i++;
+	}
+	return (res * sig); //1 billion
 }

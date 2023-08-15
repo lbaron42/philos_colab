@@ -6,29 +6,159 @@
 /*   By: kmooney <kmooney@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/15 12:31:34 by kmooney           #+#    #+#             */
-/*   Updated: 2023/08/15 15:37:11 by kmooney          ###   ########.fr       */
+/*   Updated: 2023/08/15 21:11:45 by kmooney          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philos.h"
 
-int	mails = 0;
-pthread_mutex_t mutex;
-
 void *ft_routine(void *philo_void)
 {
+	int i;
+	
+	i = 0;
 	t_philo *philo;
 	philo = (t_philo *)philo_void;
-	for (int i = 0; i < 10000; i++)
+
+	while (i == 0)
 	{
-		pthread_mutex_lock(philo->fork_left);
-		pthread_mutex_lock(philo->fork_right);
-		philo->out++;
-		pthread_mutex_unlock(philo->fork_left);
-		pthread_mutex_unlock(philo->fork_right);
-		printf("Philo %d is eating\n", philo->id);
+		// printf("Current time is %lu \n", get_time());
+		// usleep(100000);
+		// printf("After 1000 usleep Current time is %lu \n", get_time());
+		if(i == 1)
+			printf("filo is dead%d\n", i);
+		if (ft_eat(philo) == 1)
+			return ((void *)1);
+		usleep(philo->t_sleep * 1000);
+		//ft_think(philo);
+		// while (i == 0)
+		// {
+		// 	usleep(10*1000);
+		// 	i = ft_die_verify(philo);
+
+		// }
 	}
 	return NULL;
+}
+
+int	ft_eat(t_philo *philo)
+{
+	uint64_t current;
+	int i = 0;
+
+	while (i == 0)
+	{
+		philo->f_count = 0;
+		current = get_time() - philo->start;
+		printf("ft_eat says current is %lu\n", current );
+		printf("ft_eat says philo->reset is %lu\n", philo->reset);
+		printf("ft_eat says current - philo->reset is %lu\n", current - philo->reset);
+/// issue here with time management
+		printf("ft_eat says philo->t_die is %lu\n", philo->t_die);
+
+		i = ft_die_verify(philo);
+		if(pthread_mutex_lock(philo->fork_left) == 0 && pthread_mutex_lock(philo->fork_right) == 0)
+		{
+			printf("%lu Philo %d has taken both forks\n",current, philo->id);
+			philo->f_count++;
+			philo->f_count++;
+		}
+
+		// if(pthread_mutex_lock(philo->fork_left))
+		// {
+		// 	printf("%hu Philo %d has taken a fork\n",current, philo->id);
+		// 	philo->f_count++;
+		// }
+		// if (pthread_mutex_lock(philo->fork_right))
+		// {
+		// 		printf("%hu Philo %d has taken a fork\n",current, philo->id);
+		// 		philo->f_count++;
+		// }
+		if (philo->f_count == 2)
+		{
+			printf("%lu Philo %d is eating\n",current, philo->id);
+			usleep(philo->t_eat * 1000);
+			current = get_time() - philo->start;
+			printf("%lu Philo %d has finished eating\n",current, philo->id);
+			philo->reset = get_time();
+		}
+		pthread_mutex_unlock(philo->fork_left);
+		pthread_mutex_unlock(philo->fork_right);
+		philo->meals--;
+	}
+	// if (i == 1)
+	// {
+	// 	current = get_time() - philo->start;
+	// 	printf("%lu Philo %d is dead\n", current, philo->id);
+	// 	return (1);
+	// }
+	return (0);
+}
+
+void	ft_sleep(t_philo *philo)
+{
+	uint64_t current;
+	
+	current = get_time() - philo->start;
+	pthread_mutex_lock(philo->fork_left);
+	pthread_mutex_lock(philo->fork_right);
+	printf("Time stamp: %lu Philo %d is eating\n",current, philo->id);
+	usleep(200000);
+	pthread_mutex_unlock(philo->fork_left);
+	pthread_mutex_unlock(philo->fork_right);	
+}
+
+void	ft_think(t_philo *philo)
+{
+	uint64_t current;
+	
+	current = get_time() - philo->start;
+	pthread_mutex_lock(philo->fork_left);
+	pthread_mutex_lock(philo->fork_right);
+	printf("Time stamp: %lu Philo %d is eating\n",current, philo->id);
+	usleep(200000);
+	pthread_mutex_unlock(philo->fork_left);
+	pthread_mutex_unlock(philo->fork_right);
+}
+
+// int	ft_die_verify(t_philo *philo)
+// {
+// 	int i;
+
+// 	i = 0;
+// 	uint64_t current;
+// 	current = get_time();
+// 	if(current - philo->reset > philo->t_die)
+// 	{
+// 		i = 1;
+// 		return (i);
+// 	}
+// 	return (i);
+// }
+
+
+int	ft_die_verify(t_philo *philo)
+{
+	int i;
+
+	i = 0;
+	uint64_t current;
+	current = get_time() - philo->start;
+	// printf("ft_die_verify says current - philo->reset is %lu\n", current - philo->reset);
+	// printf("ft_die_verify says current - current is %lu\n", current);
+	// printf("ft_die_verify says philo->reset is %lu\n", philo->reset);
+	// printf("ft_die_verify says philo->t_die is %lu\n", philo->t_die);
+	if((current - philo->reset) > philo->t_die)
+	{
+		printf("ft_die_verify says current - philo->reset is %lu\n", current - philo->reset);
+		printf("ft_die_verify says philo->t_die is %lu\n", philo->t_die);
+		printf("%lu Philo %d is dead\n", current, philo->id);
+
+
+		i = 1;
+		return (i);
+	}
+	return (i);
 }
 
 void	ft_thread_init(t_data *data)
@@ -46,6 +176,7 @@ void	ft_thread_init(t_data *data)
 		}
 	}
 	ft_join_philos(data);
+	ft_free_all(data);
 	return ;
 }
 
@@ -54,8 +185,15 @@ void	ft_philo_init(t_data *data, int i)
 		data->philo[i] = (t_philo *)malloc(sizeof(t_philo));
 		if (!data->philo[i])
 			ft_free_all(data);
+		data->philo[i]->start = data->start;
+		data->philo[i]->reset = data->start - get_time();
 		data->philo[i]->id = i;
-		data->philo[i]->out = 0;
+		data->philo[i]->t_die = data->time_to_die;
+		data->philo[i]->t_eat = data->time_to_eat;
+		data->philo[i]->t_sleep = data->time_to_sleep;
+		data->philo[i]->dead = 0;
+		data->philo[i]->meals = 0;
+		data->philo[i]->f_count = 0;
 		data->philo[i]->thread = (pthread_t *)malloc(sizeof(pthread_t));
 		if (!data->philo[i]->thread)
 			ft_free_all(data);
@@ -107,12 +245,24 @@ void	ft_create_forks(t_data *data)
 void	ft_input_convert(char **argv, int argc, t_data *data)
 {
 	data->num_philo = ft_atoi(argv[1]);
-	data->time_to_die = ft_atoi(argv[2]);
-	data->time_to_eat = ft_atoi(argv[3]);
-	data->time_to_sleep = ft_atoi(argv[4]);
+	data->time_to_die = ft_atoi_uint64t(argv[2]);
+	data->time_to_eat = ft_atoi_uint64t(argv[3]);
+	data->time_to_sleep = ft_atoi_uint64t(argv[4]);
+	data->start = get_time();
 	if (argv[5])
 		data->n_to_eat = ft_atoi(argv[5]);
+	else
+		data->n_to_eat = -2;
 	return ;
+}
+
+uint64_t	get_time(void) // returns time in milliseconds
+{
+	struct timeval	tv;
+
+	if (gettimeofday(&tv, NULL))
+		return (0);
+	return ((tv.tv_sec * (uint64_t)1000) + (tv.tv_usec / 1000));
 }
 
 int	main(int argc, char **argv)
@@ -132,5 +282,6 @@ int	main(int argc, char **argv)
 	ft_create_philos(data);
 	ft_thread_init(data);
 	ft_free_all(data);
-	return (0);	pthread_mutex_init(&mutex, NULL);
+	printf("%lu\n", get_time());
+	return (0);
 }
