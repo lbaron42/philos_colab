@@ -1,178 +1,136 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   'main.c'                                           :+:      :+:    :+:   */
+/*   philos.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lbaron    <lbaron@student.42berlin.de>     :+:  +:+       +#+        */
+/*   By: kmooney <kmooney@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023-08-14 13:13:03 by lbaron            :+:    #+#             */
-/*   Updated: 2023-08-14 13:13:03 by lbaron           ###   ########.fr       */
+/*   Created: 2023/08/15 12:31:34 by kmooney           #+#    #+#             */
+/*   Updated: 2023/08/15 15:37:11 by kmooney          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philos.h"
 
-int j = 0;
+int	mails = 0;
+pthread_mutex_t mutex;
 
-typedef struct s_philo
+void *ft_routine(void *philo_void)
 {
-	int		id;
-	pthread_t phi;
-}t_philo;
-
-typedef struct s_forks
-{
-	int id;
-	pthread_mutex_t mutex;
-}t_forks;
-
-typedef struct s_data
-{
-	int		num_philosophers;
-	int		time_to_die;
-	int		time_to_eat;
-	int		time_to_sleep;
-	int		n_to_eat;
-	t_philo	**philo;
-	t_forks **forks;
-}t_data;
-
-int mails = 0;
-
-
-u_int64_t get_time(void)
-{
-	struct timeval time;
-	if (gettimeofday(&time, NULL))
-		return (0);
-
-	return ((time.tv_usec * (u_int64_t)1000) + (time.tv_usec / 1000));
-}
-
-void *routine(void *data)
-{
-	//j = 0;
-	t_data *v;
-	u_int64_t time_begin;
-	u_int64_t time_end;
-	u_int64_t total_time;
-	v = (t_data *)data;
-
-	time_begin = get_time();
-	for (int i = 0; i < 3 ;i++)
+	t_philo *philo;
+	philo = (t_philo *)philo_void;
+	for (int i = 0; i < 10000; i++)
 	{
-//		pthread_mutex_lock(&v->forks[j]->mutex);
-		mails++;
-		printf("Mails is %d \n", mails);
-//		pthread_mutex_unlock(&v->forks[j]->mutex);
+		pthread_mutex_lock(philo->fork_left);
+		pthread_mutex_lock(philo->fork_right);
+		philo->out++;
+		pthread_mutex_unlock(philo->fork_left);
+		pthread_mutex_unlock(philo->fork_right);
+		printf("Philo %d is eating\n", philo->id);
 	}
-
-	if (v->philo[j]->id == 0)
-	{
-		printf("Thread %d is super special!\n", v->philo[j]->id);
-		//usleep(100000);
-
-	}
-	time_end = get_time();
-	total_time = time_end - time_begin;
-	total_time = total_time / 1000;
-	printf("Thread %d says total time elapsed: %lu\n", v->philo[j]->id, total_time);
-
-	j++;
 	return NULL;
 }
 
-void create_philos(t_data *v)
-{
-	int i;
-
-	i = 0;
-	v->philo = malloc((v->num_philosophers + 1) * sizeof(v->philo));
-	while(i < v->num_philosophers)
-	{
-		v->philo[i] = malloc(sizeof(t_philo));
-		v->philo[i]->id = i;
-		if (pthread_create(&v->philo[i]->phi, NULL, &routine, v) != 0)
-		{
-			write(2, "Thread creation fail", 20);
-		}
-		i++;
-	}
-	v->philo[i] = NULL;
-}
-
-void join_philos(int num_phi, t_philo **philo)
+void	ft_thread_init(t_data *data)
 {
 	int	i;
 
 	i = 0;
-	while(i < num_phi)
+	while (i < data->num_philo)
 	{
-		if (pthread_join(philo[i]->phi, NULL) != 0)
+		data->philo[i]->thread = (pthread_t *)malloc(sizeof(pthread_t));
 		{
-			write(2, "pthread join fail", 17);
+			if (pthread_create(data->philo[i]->thread, NULL, &ft_routine, (void *)data->philo[i]) != 0)
+				write(2, "Thread creation fail", 20);
+			i ++;
 		}
+	}
+	ft_join_philos(data);
+	return ;
+}
+
+void	ft_philo_init(t_data *data, int i)
+{
+		data->philo[i] = (t_philo *)malloc(sizeof(t_philo));
+		if (!data->philo[i])
+			ft_free_all(data);
+		data->philo[i]->id = i;
+		data->philo[i]->out = 0;
+		data->philo[i]->thread = (pthread_t *)malloc(sizeof(pthread_t));
+		if (!data->philo[i]->thread)
+			ft_free_all(data);
+		if (i == 0)
+			data->philo[i]->fork_left = &data->forks[data->num_philo - 1]->mutex;
+		else
+			data->philo[i]->fork_left = &data->forks[i - 1]->mutex;
+		data->philo[i]->fork_right = &data->forks[i]->mutex;
+		return ;
+}
+
+void	ft_create_philos(t_data *data)
+{
+	int i;
+
+	i = 0;
+	data->philo = (t_philo **)malloc((data->num_philo + 1) * sizeof(t_philo *));
+	if (!data->philo)
+		ft_free_all(data);
+	while (i < data->num_philo)
+	{
+		ft_philo_init(data, i);
 		i++;
 	}
+	data->philo[i] = NULL;
+	return ;
 }
 
-void create_forks(int num_phi, t_forks ***forks)
+void	ft_create_forks(t_data *data)
 {
-	int i;
+	int	i;
 
-	*forks = malloc((num_phi + 1) * sizeof(**forks));
-	for (i = 0; i < num_phi; i++)
+	i = 0;
+	data->forks = (t_forks **)malloc((data->num_philo + 1) * sizeof(t_forks *));
+	if (!data->forks)
+		ft_free_all(data);
+	while (i < data->num_philo)
 	{
-		(*forks)[i] = malloc(sizeof(t_forks));
-		(*forks)[i]->id = i;
-		if (pthread_mutex_init(&(*forks)[i]->mutex, NULL) != 0)
-		{
+		data->forks[i] = (t_forks *)malloc(sizeof(t_forks));
+		data->forks[i]->id = i;
+		if (pthread_mutex_init(&(data->forks[i])->mutex, NULL) != 0)
 			write(2, "Mutex creation fail", 20);
-		}
+		i++;
 	}
-	(*forks)[i] = NULL;
+	data->forks[i] = NULL;
+	return ;
 }
 
-void destroy_forks(t_data *v)
+void	ft_input_convert(char **argv, int argc, t_data *data)
 {
-	int i;
-
-	for (i = 0; i < v->num_philosophers; i++)
-	{
-		if (pthread_mutex_destroy(&v->forks[j]->mutex) != 0)
-		{
-			write(2, "Mutex Destroy fail", 18);
-		}
-	}
+	data->num_philo = ft_atoi(argv[1]);
+	data->time_to_die = ft_atoi(argv[2]);
+	data->time_to_eat = ft_atoi(argv[3]);
+	data->time_to_sleep = ft_atoi(argv[4]);
+	if (argv[5])
+		data->n_to_eat = ft_atoi(argv[5]);
+	return ;
 }
 
-int	main(int argc, char *argv[])
+int	main(int argc, char **argv)
 {
-	t_data	v;
-
+	t_data	*data;
+	
+	data = (t_data *)malloc(sizeof(t_data));
+	if (!data)
+		exit (1);
 	if (argc != 5 && argc != 6)
 	{
 		print_message();
-		return (1);
+		ft_free_all(data);
 	}
-	v.num_philosophers = ft_atoi(argv[1]);
-	v.time_to_die = ft_atoi(argv[2]);
-	v.time_to_eat = ft_atoi(argv[3]);
-	v.time_to_sleep = ft_atoi(argv[4]);
-	if(argv[5])
-		v.n_to_eat = ft_atoi(argv[5]);
-	printf("Number of philosophers: %d\n", v.num_philosophers);
-	printf("Time to die: %d\n", v.time_to_die);
-	printf("Time to eat: %d\n", v.time_to_eat);
-	printf("Time to sleep: %d\n", v.time_to_sleep);
-	if (argv[5])
-		printf("Number of times each philosopher must eat: %d\n", v.n_to_eat);
-	create_forks(v.num_philosophers, &v.forks);
-	create_philos(&v);
-	join_philos(v.num_philosophers, v.philo);
-
-//	destroy_forks(&v);
-	printf("Number of mails: %d\n", mails);
-	return (0);
+	ft_input_convert(argv, argc, data);
+	ft_create_forks(data);
+	ft_create_philos(data);
+	ft_thread_init(data);
+	ft_free_all(data);
+	return (0);	pthread_mutex_init(&mutex, NULL);
 }
-
