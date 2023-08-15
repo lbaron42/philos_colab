@@ -18,8 +18,8 @@ void	ft_lock_all_mutex(t_data *data)
 
 	i = 0;
 	while (i < data->num_philo)
-		pthread_mutex_lock(&(data->forks[i]->mutex)); //kill remaining philosphers and don't let them print
-	return ;
+		pthread_mutex_lock(&(data->forks[i]->mutex)); //kill remaining philosphers and don't let them print 
+	return ; // need to unlock them before destroying them? - need another function
 }
 
 void	ft_thread_init(t_data *data)
