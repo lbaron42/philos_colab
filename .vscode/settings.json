@@ -1,7 +1,9 @@
 {
 	"files.associations": {
+		"*.log": "restructuredtext",
 		"time.h": "c",
 		"stdint.h": "c",
-		"compare": "c"
+		"compare": "c",
+		"philos.h": "c"
 	}
 }

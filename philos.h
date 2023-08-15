@@ -6,7 +6,7 @@
 /*   By: kmooney <kmooney@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/15 12:43:54 by kmooney           #+#    #+#             */
-/*   Updated: 2023/08/15 19:27:44 by kmooney          ###   ########.fr       */
+/*   Updated: 2023/08/16 00:09:42 by kmooney          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ typedef struct s_philo
 	int				f_count;
 	pthread_mutex_t *fork_left;
 	pthread_mutex_t *fork_right;
+	pthread_mutex_t	*dead_mutex;
 	pthread_t		*thread;
 } t_philo;
 
@@ -45,14 +46,16 @@ typedef struct s_forks
 
 typedef struct s_data
 {
-	uint64_t	start;
-	int			num_philo;
-	uint64_t	time_to_die;
-	int			time_to_eat;
-	int			time_to_sleep;
-	int			n_to_eat;
-	t_philo		**philo;
-	t_forks		**forks;
+	uint64_t		start;
+	int				num_philo;
+	uint64_t		time_to_die;
+	int				time_to_eat;
+	int				time_to_sleep;
+	int				n_to_eat;
+	int				death;
+	pthread_mutex_t	dead_mutex;
+	t_philo			**philo;
+	t_forks			**forks;
 } t_data;
 
 int		main(int argc, char **argv);
