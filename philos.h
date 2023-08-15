@@ -6,7 +6,7 @@
 /*   By: kmooney <kmooney@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/15 12:43:54 by kmooney           #+#    #+#             */
-/*   Updated: 2023/08/15 15:34:28 by kmooney          ###   ########.fr       */
+/*   Updated: 2023/08/15 19:27:44 by kmooney          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,11 +19,19 @@
 # include <unistd.h>
 # include <stdlib.h>
 # include <sys/time.h>
+# include <stdint.h>
 
 typedef struct s_philo
 {
+	uint64_t		start;
+	uint64_t		reset;
 	int				id;
-	int				out;
+	int				meals;
+	uint64_t		t_die;
+	uint64_t		t_eat;
+	uint64_t		t_sleep;
+	int				dead;
+	int				f_count;
 	pthread_mutex_t *fork_left;
 	pthread_mutex_t *fork_right;
 	pthread_t		*thread;
@@ -37,18 +45,22 @@ typedef struct s_forks
 
 typedef struct s_data
 {
-	int		num_philo;
-	int		time_to_die;
-	int		time_to_eat;
-	int		time_to_sleep;
-	int		n_to_eat;
-	t_philo	**philo;
-	t_forks	**forks;
+	uint64_t	start;
+	int			num_philo;
+	uint64_t	time_to_die;
+	int			time_to_eat;
+	int			time_to_sleep;
+	int			n_to_eat;
+	t_philo		**philo;
+	t_forks		**forks;
 } t_data;
 
 int		main(int argc, char **argv);
 int		ft_atoi(char *str);
+uint64_t	ft_atoi_uint64t(char *str);
 void	print_message(void);
+uint64_t	get_time(void);
+
 
 void	ft_input_convert(char **argv, int argc, t_data *data);
 
@@ -66,5 +78,10 @@ void	ft_destroy_forks(t_data *data);
 void	ft_join_philos(t_data *data);
 void	ft_free_forks(t_data *data);
 void	ft_free_philo(t_data *data);
+
+void	ft_sleep(t_philo *philo);
+void	ft_think(t_philo *philo);
+int		ft_eat(t_philo *philo);
+int		ft_die_verify(t_philo *philo);
 
 #endif //PHILOS_H
