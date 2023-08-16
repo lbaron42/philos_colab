@@ -5,21 +5,44 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: kmooney <kmooney@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/08/15 12:31:34 by kmooney           #+#    #+#             */
-/*   Updated: 2023/08/15 23:23:39 by kmooney          ###   ########.fr       */
+/*   Created: 2023/08/16 14:24:18 by kmooney           #+#    #+#             */
+/*   Updated: 2023/08/16 15:26:20 by kmooney          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philos.h"
 
-void	ft_lock_all_mutex(t_data *data)
+void	ft_kill_all(t_data *data)
 {
 	int	i;
 
 	i = 0;
 	while (i < data->num_philo)
-		pthread_mutex_lock(&(data->forks[i]->mutex)); //kill remaining philosphers and don't let them print 
-	return ; // need to unlock them before destroying them? - need another function
+	{
+		data->philo[i]->dead = 1;
+		i++;
+	}
+	return ;
+}
+
+void	ft_monitor(t_data *data)
+{
+	int i;
+	while (1)
+	{
+		i = 0;
+		while (i < data->num_philo)
+		{
+			if (data->philo[i]->dead != 1)
+				i++;
+			else
+			{
+				ft_kill_all(data);
+				return ;
+			}
+		}
+	}
+	return ;
 }
 
 void	ft_thread_init(t_data *data)
@@ -33,16 +56,10 @@ void	ft_thread_init(t_data *data)
 		{
 			if (pthread_create(data->philo[i]->thread, NULL, &ft_routine, (void *)data->philo[i]) != 0)
 				write(2, "Thread creation fail", 20);
-			if (data->philo[i]->dead == 1)
-				data->death == 1;
-			i ++;
+			i++;
 		}
 	}
-	ft_lock_all_mutex(data);
-	if (data->death == 1)
-	{
-		while (data->forks[i])
-	}
+	ft_monitor(data);
 	ft_join_philos(data);
 	ft_free_all(data);
 	return ;
@@ -61,13 +78,13 @@ void	ft_philo_init(t_data *data, int i)
 		data->philo[i]->t_sleep = data->time_to_sleep;
 		data->philo[i]->dead = 0;
 		data->philo[i]->meals = 0;
-		data->philo[i]->f_count = 0;
+		data->philo[i]->current = 0;
 		data->philo[i]->thread = (pthread_t *)malloc(sizeof(pthread_t));
 		if (!data->philo[i]->thread)
 			ft_free_all(data);
 		if (i == 0)
 			data->philo[i]->fork_left = &data->forks[data->num_philo - 1]->mutex;
-		else
+		else 
 			data->philo[i]->fork_left = &data->forks[i - 1]->mutex;
 		data->philo[i]->fork_right = &data->forks[i]->mutex;
 		return ;
@@ -87,6 +104,14 @@ void	ft_create_philos(t_data *data)
 		i++;
 	}
 	data->philo[i] = NULL;
+	return ;
+}
+
+void	ft_create_dead_mutex(t_data *data)
+{
+	data->dead_mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+	if (pthread_mutex_init(data->dead_mutex, NULL) != 0)
+			write(2, "Mutex creation fail", 20);
 	return ;
 }
 
